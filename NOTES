@@ -1,0 +1,77 @@
+# Prepare and submit sequence BAMs data to ENA
+
+# CentOS 7
+
+
+### Init ###
+
+cd /net/eichler/vol27/projects/hgsvc/nobackups/data/ebi/ena
+
+module load miniconda/4.5.12
+#module load aspera/3.7.7
+#module load java/8u231
+
+
+
+### Run ###
+
+SAMPLE=HG00732
+PROTO=hifi
+SYSTEM=test
+
+# Upload data
+snakemake -j 2 submit/runset/HG00733-hifi/upload.flag
+
+# Submit (upload XMLs)
+snakemake -n submit/runset/${SAMPLE}-${PROTO}/submit_${SYSTEM}.flag
+
+
+### Python (for dev and TS) ###
+
+import numpy as np
+import os
+import pandas as pd
+
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+
+
+import sys
+
+sys.path.append('/net/eichler/vol27/projects/structural_variation/nobackups/tools/svpop/201910')
+
+from analib.sm import nlset
+
+from snakemake import shell
+from snakemake.io import expand
+from snakemake.io import Namedlist
+
+wildcards = Namedlist()
+input = Namedlist()
+output = Namedlist()
+params = Namedlist()
+
+%load include/definitions.smk
+
+
+
+# Scraps
+
+nlset(wildcards, 'sample', 'HG00733')
+nlset(wildcards, 'protocol', 'hifi')
+
+nlset(output, 'xml', 'xml/runset/{sample}-{protocol}-experiment.xml', wildcards)
+
+nlset(wildcards, 'run', 'r54329U_20190607_183639')
+nlset(wildcards, 'cell', '1_A01')
+
+nlset(output, 'xml', 'results/xml/runset/{sample}-{protocol}.xml', wildcards)
+
+### Clear files from FTP ###
+
+ftp -p webin.ebi.ac.uk
+
+Webin-54905
+
+cd /webin-cli/reads/HiFi_sequencing_HG00733/reads/HG00733
+mdel *
